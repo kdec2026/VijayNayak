@@ -3,372 +3,376 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real-Time Chat App</title>
+    <title>Dr. Vijay Nayak | Official Biography</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
         }
-        #chat-messages {
-            position: relative; /* Needed for the background pseudo-element */
-            z-index: 1;
+        .serif-font {
+            font-family: 'Playfair Display', serif;
         }
-        /* This is the new style for your background logo */
-        #chat-messages::before {
-            content: '';
-            position: absolute;
+        #three-canvas {
+            position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: url('https://upload.wikimedia.org/wikipedia/commons/2/22/Krop_Digital_Media_Entertainment_Corporation_%28KDEC%29_company_icon.svg');
-            background-repeat: no-repeat;
-            background-position: center;
-            background-size: 250px;
-            opacity: 0.08; /* Makes the logo very subtle */
-            z-index: -1; /* Puts the logo behind the chat text */
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
         }
-        #chat-messages::-webkit-scrollbar {
-            width: 8px;
+        .hero-gradient {
+            background: linear-gradient(135deg, rgba(240, 249, 255, 0.8) 0%, rgba(224, 242, 254, 0.8) 100%);
         }
-        #chat-messages::-webkit-scrollbar-track {
-            background: #f1f5f9;
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
-        #chat-messages::-webkit-scrollbar-thumb {
-            background: #94a3b8;
-            border-radius: 4px;
+        .card-hover:hover {
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
         }
-        #chat-messages::-webkit-scrollbar-thumb:hover {
-            background: #64748b;
+        section {
+            position: relative;
+            z-index: 1;
         }
-        .ai-spinner {
-            border: 2px solid rgba(0,0,0,.1);
-            border-left-color: #4f46e5;
-            border-radius: 50%;
-            width: 1rem;
-            height: 1rem;
-            animation: spin 1s linear infinite;
+        .logo-glow {
+            filter: drop-shadow(0 0 8px rgba(30, 58, 138, 0.2));
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .gallery-img {
+            transition: transform 0.5s ease;
+            cursor: pointer;
         }
-        .system-message {
-            text-align: center;
-            color: #64748b; /* slate-500 */
-            font-style: italic;
-            font-size: 0.875rem;
-            margin: 0.5rem 0;
+        .gallery-img:hover {
+            transform: scale(1.05);
         }
     </style>
 </head>
-<body class="bg-slate-100">
+<body class="bg-gray-50 text-gray-900">
 
-    <div id="app-container" class="flex flex-col h-screen max-w-4xl mx-auto bg-white shadow-2xl">
+    <!-- 3D Background Canvas -->
+    <canvas id="three-canvas"></canvas>
 
-        <!-- Header -->
-        <header class="bg-slate-800 text-white p-4 flex items-center justify-between shadow-md z-10">
-            <div class="flex items-center gap-4">
-                 <h1 class="text-xl md:text-2xl font-bold">Global Chat Room</h1>
-                 <button id="summarize-btn" title="Summarize conversation with AI" class="bg-slate-700 hover:bg-slate-600 text-sm font-semibold px-3 py-1 rounded-full transition duration-200 flex items-center gap-2">
-                    ✨ Summarize
-                </button>
+    <!-- Navigation -->
+    <nav class="fixed w-full bg-white/70 backdrop-blur-md z-50 border-b border-gray-100">
+        <!-- Top Gov Bar -->
+        <div class="bg-blue-900/5 border-b border-blue-900/10 py-1 px-4 hidden sm:block">
+            <div class="max-w-6xl mx-auto flex justify-between items-center text-[10px] font-bold text-blue-900/60 uppercase tracking-widest">
+                <span>Government of Rajasthan</span>
+                <span>Medical Education Department | GMC Bundi</span>
             </div>
-            <div id="user-info" class="text-right"></div>
-        </header>
-
-        <!-- Chat Messages Area -->
-        <main id="chat-messages" class="flex-grow p-4 md:p-6 overflow-y-auto">
-            <!-- Messages will be dynamically inserted here -->
-            <div class="text-center text-slate-400">Loading messages...</div>
-        </main>
-
-        <!-- Message Input Form -->
-        <footer class="bg-slate-50 p-4 border-t border-slate-200">
-            <form id="message-form" class="flex items-center space-x-3">
-                <input type="text" id="message-input" placeholder="Type a message or use /ai [your question]" autocomplete="off" required
-                    class="flex-grow w-full px-4 py-2 bg-white border border-slate-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200">
-                <button type="submit"
-                    class="bg-blue-600 text-white rounded-full p-3 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 shadow">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                    </svg>
-                </button>
-            </form>
-        </footer>
-    </div>
-
-    <!-- Username Modal -->
-    <div id="username-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 transition-opacity duration-300">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-11/12 max-w-sm text-center transform scale-95 transition-transform duration-300">
-            <h2 class="text-2xl font-bold text-slate-800 mb-4">Enter the Chat</h2>
-            <p class="text-slate-600 mb-6">Please choose a username to display.</p>
-            <form id="username-form">
-                <input type="text" id="username-input" placeholder="Your Username" required
-                    class="w-full px-4 py-3 bg-slate-100 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4">
-                <button type="submit"
-                    class="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition duration-200 shadow-md">Join Chat</button>
-            </form>
         </div>
-    </div>
-    
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // =================================================================
-        // ============== YOUR KEYS ARE ALREADY INCLUDED ===================
-        // =================================================================
         
-        // 1. YOUR FIREBASE CONFIG
-        const firebaseConfig = {
-          apiKey: "AIzaSyD8wWuUeOjyzFk8Ym-JT8iAeVAypEYbC1g",
-          authDomain: "mychatapp-4eb1a.firebaseapp.com",
-          projectId: "mychatapp-4eb1a",
-          storageBucket: "mychatapp-4eb1a.appspot.com",
-          messagingSenderId: "194029120923",
-          appId: "1:194029120923:web:4a43c1981c2ff479d6053e",
-          measurementId: "G-VRFYPYNLWH"
-        };
+        <div class="max-w-6xl mx-auto px-4 py-2 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <!-- Government Emblems -->
+                <div class="flex items-center gap-2 pr-4 border-r border-gray-200">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg" alt="Emblem of India" class="h-10 w-auto">
+                    <img src="https://upload.wikimedia.org/wikipedia/en/9/95/Digital_India_logo.svg" alt="Digital India" class="h-8 w-auto">
+                </div>
 
-        // 2. YOUR GEMINI API KEY
-        const GEMINI_API_KEY = "AIzaSyBX-Ns0Bra6RtsCQ7oI5CepiuWwazHQ3ss";
-
-        // =================================================================
-        
-        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-chat-app';
-
-        // --- DOM Elements ---
-        const chatMessages = document.getElementById('chat-messages');
-        const messageForm = document.getElementById('message-form');
-        const messageInput = document.getElementById('message-input');
-        const usernameModal = document.getElementById('username-modal');
-        const usernameForm = document.getElementById('username-form');
-        const usernameInput = document.getElementById('username-input');
-        const userInfo = document.getElementById('user-info');
-        const summarizeBtn = document.getElementById('summarize-btn');
-        
-        // --- App State ---
-        let db, auth;
-        let username = '';
-        let userId = '';
-        let currentMessages = [];
-        
-        // --- Main App Logic ---
-        async function initialize() {
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                setLogLevel('Debug');
-                await setupAuth();
-                usernameModal.classList.remove('opacity-0');
-                usernameModal.querySelector('div').classList.remove('scale-95');
-            } catch (error) {
-                console.error("Initialization failed:", error);
-            }
-        }
-
-        async function setupAuth() {
-            // We will now ONLY use anonymous sign-in.
-            // The custom token from the preview environment is ignored to prevent the mismatch error.
-            try {
-                await signInAnonymously(auth);
-                userId = auth.currentUser.uid;
-                console.log("Signed in anonymously.");
-            } catch (error) {
-                console.error("Anonymous sign-in failed:", error);
-                if (error.code === 'auth/configuration-not-found') {
-                    displayError("Configuration Error: Please enable 'Anonymous' sign-in in your Firebase project's Authentication settings.");
-                } else {
-                    displayError("Could not connect to the chat service. Please check your Firebase configuration and internet connection.");
-                }
-                throw error; // Stop execution.
-            }
-        }
-        
-        async function callGeminiWithRetries(prompt, withGrounding = false, maxRetries = 3) {
-            let attempt = 0;
-            const payload = { contents: [{ parts: [{ text: prompt }] }] };
-            if (withGrounding) { payload.tools = [{ "google_search": {} }]; }
-
-            while (attempt < maxRetries) {
-                try {
-                    const response = await fetch(GEMINI_API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    if (!response.ok) throw new Error(`API call failed with status: ${response.status}`);
-                    const result = await response.json();
-                    return result.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't get a response.";
-                } catch (error) {
-                    console.error(`Gemini API call attempt ${attempt + 1} failed:`, error);
-                    attempt++;
-                    if (attempt >= maxRetries) return "The AI assistant is unavailable.";
-                    await new Promise(res => setTimeout(res, Math.pow(2, attempt) * 1000));
-                }
-            }
-        }
-
-        function listenForMessages() {
-            const messagesRef = collection(db, `/artifacts/${appId}/public/data/messages`);
-            const q = query(messagesRef);
-
-            onSnapshot(q, (querySnapshot) => {
-                const allMessages = [];
-                querySnapshot.forEach((doc) => allMessages.push({ id: doc.id, ...doc.data() }));
-                allMessages.sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
-                currentMessages = allMessages;
-                renderMessages(currentMessages);
-            }, (error) => {
-                console.error("Error listening for messages:", error);
-                displayError("Connection to chat lost.");
-            });
-        }
-        
-        function renderMessages(messages) {
-             chatMessages.innerHTML = '';
-             if (messages.length === 0) {
-                 chatMessages.innerHTML = `<div class="text-center text-slate-400">No messages yet. Say hello or try <code>/ai</code>!</div>`;
-                 return;
-             }
-             messages.forEach(msg => displayMessage(msg));
-        }
-        
-        function displayMessage(msg) {
-             const messageElement = document.createElement('div');
-             
-             if(msg.type === 'system') {
-                messageElement.className = 'system-message';
-                messageElement.textContent = msg.text;
-             } else {
-                const isCurrentUser = msg.userId === userId;
-                const isBot = msg.username?.includes('✨');
-                messageElement.className = `flex mb-4 items-end ${isCurrentUser ? 'justify-end' : 'justify-start'}`;
-
-                let bubbleClass, authorName;
-
-                if (isCurrentUser) {
-                   bubbleClass = 'bg-blue-500 text-white';
-                   authorName = '';
-                } else if (isBot) {
-                   bubbleClass = 'bg-indigo-100 text-indigo-900 border border-indigo-200';
-                   authorName = `<div class="flex items-center gap-2 text-xs text-indigo-500 mb-1 ml-2 font-semibold">${msg.username || 'AI'}</div>`;
-                } else {
-                   bubbleClass = 'bg-slate-200 text-slate-800';
-                   authorName = `<div class="text-xs text-slate-500 mb-1 ml-2">${msg.username || 'Anonymous'}</div>`;
-                }
-
-                messageElement.innerHTML = `
-                   <div class="max-w-xs md:max-w-md lg:max-w-lg">
-                       ${authorName}
-                       <div class="${bubbleClass} rounded-2xl p-3 shadow-sm">
-                           <p class="text-sm whitespace-pre-wrap">${msg.text}</p>
-                       </div>
-                   </div>
-               `;
-             }
-             chatMessages.appendChild(messageElement);
-             chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        async function handleMessageSubmit(e) {
-            e.preventDefault();
-            const messageText = messageInput.value.trim();
-            if (!messageText || !username || !userId) return;
+                <div class="flex items-center gap-3">
+                    <img src="https://raw.githubusercontent.com/kanishk2007dev/GMC-n-hssj/refs/heads/main/file_0000000000f472089c4f6c08ffcb8842.png" alt="GMC Bundi Logo" class="h-10 w-10 rounded-full bg-white object-contain p-0.5 shadow-sm logo-glow">
+                    <div class="flex flex-col">
+                        <span class="text-lg font-bold text-blue-900 leading-tight">Dr. Vijay Nayak</span>
+                        <span class="text-[9px] uppercase tracking-tighter text-gray-500 font-bold leading-none">Addl. Principal | HOD Anatomy | GMC Bundi</span>
+                    </div>
+                </div>
+            </div>
             
-            messageInput.value = '';
+            <div class="hidden lg:flex space-x-6 text-xs font-bold uppercase tracking-wider">
+                <a href="#about" class="hover:text-blue-600 transition">About</a>
+                <a href="#expertise" class="hover:text-blue-600 transition">Expertise</a>
+                <a href="#roles" class="hover:text-blue-600 transition">Leadership</a>
+                <a href="#gallery" class="hover:text-blue-600 transition">Gallery</a>
+                <a href="#contact" class="hover:text-blue-600 transition">Contact</a>
+            </div>
+        </div>
+    </nav>
 
-            if (messageText.startsWith('/ai ')) {
-                const prompt = messageText.substring(4).trim();
-                await addMessageToDb({text: messageText}); 
-                handleAiPrompt(prompt);
-            } else {
-                await addMessageToDb({text: messageText});
-            }
-        }
-        
-        async function handleAiPrompt(prompt) {
-             if (!prompt) return;
-             const thinkingMessage = { text: 'Thinking...', username: '✨ AI Assistant', userId: 'ai-bot-thinking' };
-             displayMessage(thinkingMessage); 
-             
-             const response = await callGeminiWithRetries(prompt, true);
-             
-             await addMessageToDb({text: response, username: '✨ AI Assistant', userId: 'ai-bot'});
-        }
-
-        async function handleSummarize() {
-            if (currentMessages.length < 3) { return; }
-            summarizeBtn.disabled = true;
-            summarizeBtn.innerHTML = '<div class="ai-spinner mx-auto"></div>';
-            
-            const conversation = currentMessages
-                .filter(msg => !msg.username?.includes('✨') && msg.type !== 'system')
-                .map(msg => `${msg.username}: ${msg.text}`)
-                .join('\n');
-
-            const prompt = `Provide a brief, bulleted summary of this chat:\n\n${conversation}`;
-            const summary = await callGeminiWithRetries(prompt);
-            await addMessageToDb({text: summary, username: '✨ Summary Bot', userId: 'summary-bot'});
-            summarizeBtn.disabled = false;
-            summarizeBtn.innerHTML = '✨ Summarize';
-        }
-
-        async function addMessageToDb({text, fromUser = username, fromUserId = userId, type = 'user'}) {
-             try {
-                const messagesRef = collection(db, `/artifacts/${appId}/public/data/messages`);
-                await addDoc(messagesRef, {
-                    text: text,
-                    username: fromUser,
-                    userId: fromUserId,
-                    timestamp: serverTimestamp(),
-                    type: type,
-                });
-            } catch (error) {
-                console.error("Error sending message:", error);
-            }
-        }
-
-        async function handleUsernameSubmit(e) {
-            e.preventDefault();
-            const chosenUsername = usernameInput.value.trim();
-            if (chosenUsername) {
-                username = chosenUsername;
-                usernameModal.classList.add('opacity-0');
-                setTimeout(() => usernameModal.style.display = 'none', 300);
+    <!-- Hero Section -->
+    <section class="pt-44 pb-20 hero-gradient px-4 min-h-screen flex items-center">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
+            <div class="w-full md:w-1/2 space-y-6">
+                <div class="flex items-center gap-4 mb-2">
+                    <img src="https://raw.githubusercontent.com/kanishk2007dev/GMC-n-hssj/refs/heads/main/file_0000000000f472089c4f6c08ffcb8842.png" alt="GMC Bundi Logo" class="h-16 w-16 rounded-full bg-white object-contain p-1 shadow-md">
+                    <div class="h-12 w-[1px] bg-blue-200"></div>
+                    <div class="text-blue-800 font-bold leading-tight">
+                        Government Medical College<br><span class="text-blue-600">Bundi, Rajasthan</span>
+                    </div>
+                </div>
                 
-                userInfo.innerHTML = `
-                    <div class="text-sm text-slate-300">Logged in as:</div>
-                    <div class="font-semibold">${username}</div>
-                `;
-                listenForMessages();
-                // **NEW FEATURE**: Announce user has joined
-                await addMessageToDb({text: `${username} has joined the chat.`, type: 'system'});
-            }
-        }
-        
-        function displayError(message) {
-            const container = document.getElementById('app-container');
-            container.innerHTML = `<div class="m-auto text-center p-8">
-                <h2 class="text-xl font-bold text-red-600">An Error Occurred</h2>
-                <p class="text-slate-600 mt-2">${message}</p>
-            </div>`;
-        }
-        
-        // --- Event Listeners ---
-        messageForm.addEventListener('submit', handleMessageSubmit);
-        usernameForm.addEventListener('submit', handleUsernameSubmit);
-        summarizeBtn.addEventListener('click', handleSummarize);
-        
-        // --- Start the App ---
-        initialize();
+                <div class="space-y-2">
+                    <h1 class="text-4xl md:text-6xl font-bold text-blue-900 serif-font leading-tight">
+                        Dr. Vijay Nayak
+                    </h1>
+                    <div class="flex flex-wrap gap-2 text-sm font-bold uppercase tracking-wider text-blue-700">
+                        <span>Additional Principal</span>
+                        <span class="text-gray-300">•</span>
+                        <span>HOD Anatomy</span>
+                        <span class="text-gray-300">•</span>
+                        <span>Welfare Committee Incharge</span>
+                    </div>
+                </div>
 
+                <p class="text-lg text-gray-600 max-w-lg">
+                    A highly respected academician and dedicated medical professional shaping the future of medicine through conceptual clarity and administrative excellence at GMC Bundi.
+                </p>
+                
+                <div class="flex flex-wrap gap-4 pt-2">
+                    <a href="#about" class="bg-blue-900 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-800 transition shadow-lg">Read Biography</a>
+                    <a href="#gallery" class="bg-white text-blue-900 border border-blue-200 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition shadow-sm flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        View Gallery
+                    </a>
+                </div>
+            </div>
+            
+            <div class="w-full md:w-1/2 flex justify-center">
+                <div class="relative group">
+                    <div class="absolute -inset-4 bg-blue-400 rounded-full opacity-20 blur-2xl group-hover:opacity-40 transition duration-1000"></div>
+                    <img 
+                        src="https://wsrv.nl/?url=https://raw.githubusercontent.com/kanishk2007dev/gmcbundi-main-website/refs/heads/main/IMG-20260iojt9898r201-WA0013.jpg&output=webp&w=400" 
+                        alt="Dr. Vijay Nayak" 
+                        class="relative rounded-2xl shadow-2xl w-full max-w-sm border-8 border-white transition-transform duration-500 group-hover:scale-[1.02]"
+                        onerror="this.src='https://via.placeholder.com/400x500?text=Dr.+Vijay+Nayak'"
+                    >
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-24 px-4">
+        <div class="max-w-4xl mx-auto glass-card p-10 md:p-16 rounded-3xl shadow-xl space-y-8">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold text-gray-900 serif-font">Professional Biography</h2>
+                <div class="h-1 w-20 bg-blue-600 mx-auto rounded-full mt-4"></div>
+            </div>
+            <div class="space-y-6 text-lg text-gray-700 leading-relaxed">
+                <p>
+                    <strong>Dr. Vijay Nayak</strong> is a highly respected academician and medical professional known for his profound expertise in the field of Anatomy. With years of teaching experience and an unwavering dedication to medical education, he has played a significant role in shaping the academic journey of numerous medical students.
+                </p>
+                <p>
+                    Dr. Vijay Nayak completed his MBBS followed by a postgraduate degree (MD/MS) in Anatomy from a reputed medical institution. His strong academic background, combined with a practical clinical understanding, allows him to deliver complex anatomical concepts with exceptional clarity and depth.
+                </p>
+                <p>
+                    Beyond the classroom, his commitment extends to professional development and research, consistently contributing to academic seminars and workshops within the medical education community.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section id="gallery" class="py-24 px-4">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 serif-font">Visual Gallery</h2>
+                <div class="h-1 w-20 bg-blue-600 mx-auto rounded-full mt-4"></div>
+                <p class="text-gray-500 mt-4">Moments from academic events, workshops, and institutional milestones</p>
+            </div>
+            
+            <!-- Image Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                <div class="overflow-hidden rounded-2xl shadow-lg border-4 border-white glass-card">
+                    <img src="https://wsrv.nl/?url=https://raw.githubusercontent.com/kanishk2007dev/gmc-bundi/refs/heads/main/DSC_3168%4010222654.JPG&output=webp&w=600" class="w-full h-64 object-cover gallery-img" alt="Gallery Image 1">
+                </div>
+                <div class="overflow-hidden rounded-2xl shadow-lg border-4 border-white glass-card">
+                    <img src="https://wsrv.nl/?url=https://raw.githubusercontent.com/kanishk2007dev/gmc-bundi/refs/heads/main/DSC_3430%4010767729.JPG&output=webp&w=600" class="w-full h-64 object-cover gallery-img" alt="Gallery Image 2">
+                </div>
+                <div class="overflow-hidden rounded-2xl shadow-lg border-4 border-white glass-card">
+                    <img src="https://wsrv.nl/?url=https://raw.githubusercontent.com/kanishk2007dev/gmc-bundi/refs/heads/main/DSC_5730%4010978148.JPG&output=webp&w=600" class="w-full h-64 object-cover gallery-img" alt="Gallery Image 3">
+                </div>
+                <div class="overflow-hidden rounded-2xl shadow-lg border-4 border-white glass-card">
+                    <img src="https://wsrv.nl/?url=https://raw.githubusercontent.com/kanishk2007dev/gmc-bundi/refs/heads/main/DSC_6090%4011116254.JPG&output=webp&w=600" class="w-full h-64 object-cover gallery-img" alt="Gallery Image 4">
+                </div>
+                <div class="overflow-hidden rounded-2xl shadow-lg border-4 border-white glass-card">
+                    <img src="https://wsrv.nl/?url=https://raw.githubusercontent.com/kanishk2007dev/gmc-bundi/refs/heads/main/DSC_6805%4010607650.jpg&output=webp&w=600" class="w-full h-64 object-cover gallery-img" alt="Gallery Image 5">
+                </div>
+                <div class="overflow-hidden rounded-2xl shadow-lg border-4 border-white glass-card">
+                    <img src="https://wsrv.nl/?url=https://raw.githubusercontent.com/kanishk2007dev/gmc-bundi/refs/heads/main/DSC_6475%4010407331.jpg&output=webp&w=600" class="w-full h-64 object-cover gallery-img" alt="Gallery Image 6">
+                </div>
+            </div>
+
+            <div class="text-center">
+                <a href="https://photos.app.goo.gl/Hf9UyyyKKuixviSbA" target="_blank" class="inline-flex items-center gap-2 bg-blue-900 text-white px-10 py-4 rounded-xl font-bold hover:bg-blue-800 transition transform hover:scale-105 shadow-xl">
+                    View Full Cloud Album
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Leadership Roles Section -->
+    <section id="roles" class="py-20 px-4">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 serif-font">Institutional Leadership</h2>
+                <p class="text-gray-500 mt-2">Key responsibilities held by Dr. Vijay Nayak at GMC Bundi</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- Role 1 -->
+                <div class="glass-card p-8 rounded-2xl shadow-md border-t-4 border-blue-900 flex flex-col h-full card-hover">
+                    <div class="bg-blue-50 w-12 h-12 rounded-lg flex items-center justify-center mb-4 text-blue-900">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5z"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><polyline points="10 2 10 10 13 7 16 10 16 2"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-blue-900 mb-3 serif-font">HOD Anatomy</h3>
+                    <p class="text-gray-700 leading-relaxed text-sm">
+                        As the <strong>Head of Department (Anatomy)</strong>, Dr. Vijay Nayak leads the academic curriculum and departmental initiatives, ensuring foundational excellence for all medical undergraduates.
+                    </p>
+                </div>
+                <!-- Role 2 -->
+                <div class="glass-card p-8 rounded-2xl shadow-md border-t-4 border-blue-600 flex flex-col h-full card-hover">
+                    <div class="bg-blue-50 w-12 h-12 rounded-lg flex items-center justify-center mb-4 text-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-blue-900 mb-3 serif-font">Additional Principal</h3>
+                    <p class="text-gray-700 leading-relaxed text-sm">
+                        In his capacity as <strong>Additional Principal</strong> of GMC Bundi, he manages vital administrative and academic workflows, upholding the institution's professional standards.
+                    </p>
+                </div>
+                <!-- Role 3 -->
+                <div class="glass-card p-8 rounded-2xl shadow-md border-t-4 border-green-600 flex flex-col h-full card-hover">
+                    <div class="bg-green-50 w-12 h-12 rounded-lg flex items-center justify-center mb-4 text-green-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-green-900 mb-3 serif-font">Welfare Incharge</h3>
+                    <p class="text-gray-700 leading-relaxed text-sm">
+                        Serving as the <strong>Welfare Committee Incharge</strong>, he oversees student support systems, providing guidance and ensuring a healthy, disciplined environment for academic growth.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer / Contact -->
+    <footer id="contact" class="bg-white/80 backdrop-blur-md py-12 px-4 border-t border-gray-100">
+        <div class="max-w-6xl mx-auto text-center">
+            <div class="flex justify-center items-center gap-4 mb-8 opacity-60">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg" alt="Emblem of India" class="h-12 w-auto">
+                <img src="https://raw.githubusercontent.com/kanishk2007dev/GMC-n-hssj/refs/heads/main/file_0000000000f472089c4f6c08ffcb8842.png" alt="GMC Bundi Logo" class="h-16 w-16 rounded-full bg-white object-contain p-1 shadow-sm">
+                <img src="https://upload.wikimedia.org/wikipedia/en/9/95/Digital_India_logo.svg" alt="Digital India" class="h-10 w-auto">
+            </div>
+            
+            <h3 class="text-2xl font-bold text-blue-900 serif-font mb-2">Dr. Vijay Nayak</h3>
+            <p class="text-gray-600 mb-2 font-semibold">Government Medical College (GMC), Bundi</p>
+            <p class="text-blue-700 mb-8 font-medium text-sm">Head of Department (Anatomy) | Additional Principal | Welfare Committee Incharge</p>
+            
+            <div class="flex flex-col md:flex-row justify-center items-center gap-6 mb-12">
+                <div class="text-blue-900 text-sm">
+                    <span class="block font-bold text-gray-400 uppercase text-[10px] tracking-widest mb-1 leading-none">Administrative Office</span>
+                    Office of the Principal, GMC Bundi
+                </div>
+                <div class="text-blue-900 text-sm md:border-l border-gray-200 md:pl-6">
+                    <span class="block font-bold text-gray-400 uppercase text-[10px] tracking-widest mb-1 leading-none">Departmental Office</span>
+                    HOD Cabin, Anatomy Block
+                </div>
+            </div>
+
+            <div class="text-[10px] text-gray-400 uppercase tracking-widest leading-loose border-t border-gray-50 pt-8">
+                &copy; 2026 Dr. Vijay Nayak. All Rights Reserved. <br>
+                Government of Rajasthan | Medical Education Department | GMC Bundi
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- THREE.JS BACKGROUND ---
+        let scene, camera, renderer, objects = [];
+        let mouseX = 0, mouseY = 0;
+
+        function init3D() {
+            const canvas = document.getElementById('three-canvas');
+            scene = new THREE.Scene();
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 5;
+
+            renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            const geometries = [
+                new THREE.IcosahedronGeometry(1, 0),
+                new THREE.OctahedronGeometry(1, 0),
+                new THREE.TorusGeometry(0.7, 0.2, 16, 100)
+            ];
+
+            for(let i = 0; i < 15; i++) {
+                const material = new THREE.MeshPhongMaterial({
+                    color: 0x1e3a8a, 
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.15
+                });
+                
+                const mesh = new THREE.Mesh(geometries[Math.floor(Math.random() * geometries.length)], material);
+                
+                mesh.position.x = (Math.random() - 0.5) * 15;
+                mesh.position.y = (Math.random() - 0.5) * 15;
+                mesh.position.z = (Math.random() - 0.5) * 10;
+                
+                mesh.rotation.x = Math.random() * Math.PI;
+                mesh.rotation.y = Math.random() * Math.PI;
+                
+                const scale = Math.random() * 0.4 + 0.2;
+                mesh.scale.set(scale, scale, scale);
+                
+                scene.add(mesh);
+                objects.push({ mesh });
+            }
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            objects.forEach(obj => {
+                obj.mesh.rotation.x += 0.003;
+                obj.mesh.rotation.y += 0.003;
+                
+                obj.mesh.position.x += (mouseX * 0.4 - obj.mesh.position.x) * 0.01;
+                obj.mesh.position.y += (mouseY * 0.4 - obj.mesh.position.y) * 0.01;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.onload = init3D;
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
     </script>
 </body>
 </html>
-
